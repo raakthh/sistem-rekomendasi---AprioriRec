@@ -1,0 +1,2005 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Rekomendasi Produk — Apriori</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #4f46e5;
+        --primary-dark: #3730a3;
+        --primary-light: #818cf8;
+        --secondary: #7c3aed;
+        --accent: #06b6d4;
+        --accent2: #10b981;
+        --bg: #0f0f1a;
+        --bg2: #16162a;
+        --bg3: #1e1e35;
+        --card: #1a1a2e;
+        --card2: #22223b;
+        --border: rgba(79, 70, 229, 0.25);
+        --text: #f0f0ff;
+        --text2: #a0a0c0;
+        --text3: #6060a0;
+        --glow: 0 0 40px rgba(79, 70, 229, 0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "Sora", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        overflow-x: hidden;
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 3px;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(79, 70, 229, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(79, 70, 229, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(15, 15, 26, 0.85);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 2rem;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+      }
+
+      .nav-logo-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .nav-logo-text {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: -0.3px;
+      }
+
+      .nav-logo-text span {
+        color: var(--primary-light);
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 4px;
+        list-style: none;
+      }
+
+      .nav-links a {
+        color: var(--text2);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        letter-spacing: 0.2px;
+      }
+
+      .nav-links a:hover,
+      .nav-links a.active {
+        color: var(--text);
+        background: rgba(79, 70, 229, 0.15);
+      }
+
+      .nav-badge {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+      }
+
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 100px 0 60px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        pointer-events: none;
+      }
+      .hero-orb-1 {
+        width: 500px;
+        height: 500px;
+        background: rgba(79, 70, 229, 0.2);
+        top: -100px;
+        right: -100px;
+      }
+      .hero-orb-2 {
+        width: 400px;
+        height: 400px;
+        background: rgba(124, 58, 237, 0.15);
+        bottom: 0;
+        left: -100px;
+      }
+      .hero-orb-3 {
+        width: 300px;
+        height: 300px;
+        background: rgba(6, 182, 212, 0.1);
+        top: 40%;
+        left: 40%;
+      }
+
+      .hero-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(79, 70, 229, 0.15);
+        border: 1px solid rgba(79, 70, 229, 0.3);
+        color: var(--primary-light);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+      }
+
+      .hero-title {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 700;
+        line-height: 1.15;
+        letter-spacing: -1px;
+        margin-bottom: 20px;
+      }
+
+      .hero-title .highlight {
+        background: linear-gradient(
+          135deg,
+          var(--primary-light),
+          var(--accent)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero-subtitle {
+        font-size: 16px;
+        color: var(--text2);
+        line-height: 1.7;
+        max-width: 520px;
+        margin-bottom: 36px;
+        font-weight: 300;
+      }
+
+      .hero-btns {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .btn-primary-custom {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: "Sora", sans-serif;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: 0.2px;
+      }
+
+      .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(79, 70, 229, 0.4);
+        color: white;
+      }
+
+      .btn-outline-custom {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 12px 28px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: "Sora", sans-serif;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-outline-custom:hover {
+        background: rgba(79, 70, 229, 0.1);
+        border-color: var(--primary);
+        color: var(--text);
+      }
+
+      /* ANIMASI REKOMENDASI ENGINE */
+      .engine-animation {
+        position: relative;
+        height: 380px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .engine-core {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(
+          circle,
+          rgba(79, 70, 229, 0.3),
+          rgba(79, 70, 229, 0)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: pulseCore 2s infinite;
+      }
+      .engine-core-inner {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+        box-shadow: 0 0 30px rgba(79, 70, 229, 0.8);
+      }
+      @keyframes pulseCore {
+        0% {
+          transform: scale(0.95);
+          opacity: 0.7;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(0.95);
+          opacity: 0.7;
+        }
+      }
+      .floating-card {
+        position: absolute;
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        backdrop-filter: blur(4px);
+        animation: floatCard 4s ease-in-out infinite;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+      @keyframes floatCard {
+        0% {
+          transform: translateY(0px) rotate(0deg);
+          opacity: 0.8;
+        }
+        50% {
+          transform: translateY(-12px) rotate(2deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(0px) rotate(0deg);
+          opacity: 0.8;
+        }
+      }
+      .card-1 {
+        top: 20px;
+        left: 20px;
+        animation-delay: 0s;
+      }
+      .card-2 {
+        top: 80px;
+        right: 30px;
+        animation-delay: 0.5s;
+      }
+      .card-3 {
+        bottom: 60px;
+        left: 50px;
+        animation-delay: 1s;
+      }
+      .card-4 {
+        bottom: 20px;
+        right: 70px;
+        animation-delay: 1.5s;
+      }
+      .card-5 {
+        top: 150px;
+        left: 120px;
+        animation-delay: 0.3s;
+        background: rgba(6, 182, 212, 0.2);
+        border-color: var(--accent);
+      }
+      .card-6 {
+        top: 50px;
+        right: 110px;
+        animation-delay: 0.8s;
+        background: rgba(16, 185, 129, 0.15);
+        border-color: var(--accent2);
+      }
+      .rule-flow {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 10px;
+        font-family: "Space Mono", monospace;
+        color: var(--text3);
+        background: rgba(0, 0, 0, 0.5);
+        padding: 6px;
+        border-radius: 20px;
+        width: 80%;
+        margin: 0 auto;
+        backdrop-filter: blur(4px);
+      }
+      .flow-text span {
+        display: inline-block;
+        animation: textFlow 1.5s infinite;
+      }
+      @keyframes textFlow {
+        0% {
+          opacity: 0.4;
+          transform: translateY(0);
+        }
+        50% {
+          opacity: 1;
+          transform: translateY(-2px);
+        }
+        100% {
+          opacity: 0.4;
+          transform: translateY(0);
+        }
+      }
+
+      .section-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--primary-light);
+        margin-bottom: 12px;
+      }
+
+      .section-title {
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 12px;
+      }
+
+      .section-subtitle {
+        font-size: 15px;
+        color: var(--text2);
+        font-weight: 300;
+        line-height: 1.6;
+      }
+
+      .stat-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .stat-card:hover {
+        border-color: rgba(79, 70, 229, 0.5);
+        transform: translateY(-3px);
+        box-shadow: var(--glow);
+      }
+
+      .stat-card:hover::before {
+        opacity: 1;
+      }
+
+      .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        margin-bottom: 16px;
+      }
+
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -1px;
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: var(--text3);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .stat-change {
+        font-size: 12px;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .dark-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s;
+      }
+
+      .dark-card:hover {
+        border-color: rgba(79, 70, 229, 0.4);
+        box-shadow: var(--glow);
+      }
+
+      .dark-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .dark-table thead th {
+        background: var(--bg3);
+        color: var(--text2);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+      }
+
+      .dark-table thead th:hover {
+        color: var(--text);
+      }
+
+      .dark-table tbody tr {
+        border-bottom: 1px solid rgba(79, 70, 229, 0.08);
+        transition: background 0.15s;
+      }
+
+      .dark-table tbody tr:hover {
+        background: rgba(79, 70, 229, 0.06);
+      }
+
+      .dark-table tbody td {
+        padding: 12px 16px;
+        color: var(--text2);
+        vertical-align: middle;
+      }
+
+      .dark-table tbody td:first-child {
+        color: var(--text);
+      }
+
+      .badge-conf {
+        font-size: 11px;
+        font-weight: 700;
+        font-family: "Space Mono", monospace;
+        padding: 3px 9px;
+        border-radius: 6px;
+      }
+
+      .badge-high {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .badge-mid {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .badge-low {
+        background: rgba(79, 70, 229, 0.15);
+        color: #818cf8;
+        border: 1px solid rgba(79, 70, 229, 0.3);
+      }
+
+      .search-input {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-family: "Sora", sans-serif;
+        font-size: 14px;
+        padding: 12px 18px;
+        width: 100%;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      .search-input:focus {
+        border-color: var(--primary);
+      }
+      .search-input::placeholder {
+        color: var(--text3);
+      }
+
+      .rec-card {
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .rec-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(79, 70, 229, 0.05),
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .rec-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(79, 70, 229, 0.2);
+      }
+
+      .rec-card:hover::after {
+        opacity: 1;
+      }
+
+      .rec-rank {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        color: var(--text3);
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+      }
+
+      .rec-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.4;
+        margin-bottom: 12px;
+      }
+
+      .rec-metrics {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .rec-metric {
+        font-size: 11px;
+        font-family: "Space Mono", monospace;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-weight: 700;
+      }
+
+      .rec-reason {
+        font-size: 11px;
+        color: var(--text3);
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .combo-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 20px;
+        transition: all 0.3s;
+      }
+
+      .combo-card:hover {
+        border-color: rgba(6, 182, 212, 0.4);
+        box-shadow: 0 0 30px rgba(6, 182, 212, 0.1);
+      }
+
+      .combo-item {
+        background: var(--bg3);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
+
+      .combo-plus {
+        text-align: center;
+        color: var(--text3);
+        font-size: 18px;
+        margin: 2px 0;
+        line-height: 1;
+      }
+
+      .combo-support {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+      }
+
+      .insight-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 20px;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        transition: all 0.3s;
+      }
+
+      .insight-card:hover {
+        border-color: rgba(79, 70, 229, 0.4);
+        background: var(--card2);
+      }
+
+      .insight-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .product-bar {
+        height: 4px;
+        background: var(--bg3);
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+
+      .product-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+        border-radius: 2px;
+        transition: width 1s ease;
+      }
+
+      .section-divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--border),
+          transparent
+        );
+        margin: 20px 0;
+      }
+
+      footer {
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+        padding: 40px 0;
+        position: relative;
+        z-index: 1;
+      }
+
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(79, 70, 229, 0.3);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: inline-block;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--accent2);
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+
+      .api-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text2);
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 4px 12px;
+      }
+
+      @media (max-width: 768px) {
+        nav {
+          padding: 0 1rem;
+        }
+        .nav-links {
+          display: none;
+        }
+        .hero {
+          padding: 90px 0 40px;
+        }
+        .hero-visual {
+          height: 320px;
+        }
+        .stat-value {
+          font-size: 1.5rem;
+        }
+        .floating-card {
+          font-size: 9px;
+          padding: 4px 8px;
+          white-space: normal;
+          width: max-content;
+          max-width: 130px;
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in-up {
+        animation: fadeInUp 0.5s ease forwards;
+      }
+
+      .counter {
+        transition: all 0.5s;
+      }
+
+      .page-btn {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        color: var(--text2);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .page-btn:hover,
+      .page-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      .search-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 100;
+        display: none;
+      }
+
+      .search-dropdown.show {
+        display: block;
+      }
+
+      .dropdown-item-custom {
+        padding: 10px 16px;
+        font-size: 13px;
+        color: var(--text2);
+        cursor: pointer;
+        transition: background 0.15s;
+        border-bottom: 1px solid rgba(79, 70, 229, 0.06);
+      }
+
+      .dropdown-item-custom:hover {
+        background: rgba(79, 70, 229, 0.1);
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav>
+      <a href="#hero" class="nav-logo">
+        <div class="nav-logo-icon">
+          <i class="fas fa-project-diagram" style="color: white"></i>
+        </div>
+        <span class="nav-logo-text">Apriori<span>Rec</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#stats" class="active">Dashboard</a></li>
+        <li><a href="#rekomendasi">Rekomendasi</a></li>
+        <li><a href="#rules">Association Rules</a></li>
+        <li><a href="#basket">Market Basket</a></li>
+        <li><a href="#insights">Insights</a></li>
+      </ul>
+      <div class="api-status" id="apiStatus">
+        <div class="pulse-dot"></div>
+        <span id="apiStatusText">Menghubungkan...</span>
+      </div>
+    </nav>
+
+    <!-- ==================== HERO ==================== -->
+    <section class="hero" id="hero">
+      <div class="hero-orb hero-orb-1"></div>
+      <div class="hero-orb hero-orb-2"></div>
+      <div class="hero-orb hero-orb-3"></div>
+      <div class="container" style="position: relative; z-index: 1">
+        <div class="row align-items-center">
+          <div class="col-lg-6" data-aos="fade-right" data-aos-duration="800">
+            <div class="hero-tag">
+              <i class="fas fa-atom fa-spin" style="animation-duration: 3s"></i>
+              Association Rule Mining
+            </div>
+            <h1 class="hero-title">
+              Sistem Rekomendasi Produk
+              <span class="highlight">Marketplace</span>
+              Berbasis Algoritma Apriori
+            </h1>
+            <p class="hero-subtitle">
+              Menemukan pola pembelian tersembunyi dari ratusan ribu transaksi
+              menggunakan metode Association Rule Mining untuk menghasilkan
+              rekomendasi produk yang cerdas.
+            </p>
+            <div class="hero-btns">
+              <a href="#rekomendasi" class="btn-primary-custom">
+                <i class="fas fa-search"></i> Mulai Analisis
+              </a>
+              <a href="#rules" class="btn-outline-custom">
+                <i class="fas fa-table"></i> Lihat Rekomendasi
+              </a>
+            </div>
+            <div class="mt-4 d-flex gap-3 flex-wrap">
+              <small
+                style="
+                  color: var(--text3);
+                  font-size: 12px;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                "
+              >
+                <i
+                  class="fas fa-database"
+                  style="color: var(--primary-light)"
+                ></i>
+                541.910 transaksi diproses
+              </small>
+              <small
+                style="
+                  color: var(--text3);
+                  font-size: 12px;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                "
+              >
+                <i class="fas fa-link" style="color: var(--accent)"></i> 68
+                association rules aktif
+              </small>
+            </div>
+          </div>
+          <div
+            class="col-lg-6"
+            data-aos="fade-left"
+            data-aos-duration="800"
+            data-aos-delay="200"
+          >
+            <!-- ANIMASI REKOMENDASI ENGINE (Mengganti network graph) -->
+            <div class="engine-animation">
+              <div class="engine-core">
+                <div class="engine-core-inner">
+                  <i class="fas fa-magic"></i>
+                </div>
+              </div>
+              <div class="floating-card card-1">
+                <i
+                  class="fas fa-box"
+                  style="margin-right: 6px; color: var(--accent)"
+                ></i>
+                JUMBO BAG
+              </div>
+              <div class="floating-card card-2">
+                <i
+                  class="fas fa-mug-hot"
+                  style="margin-right: 6px; color: var(--accent2)"
+                ></i>
+                TEACUP SET
+              </div>
+              <div class="floating-card card-3">
+                <i
+                  class="fas fa-clock"
+                  style="margin-right: 6px; color: var(--primary-light)"
+                ></i>
+                ALARM CLOCK
+              </div>
+              <div class="floating-card card-4">
+                <i
+                  class="fas fa-shopping-bag"
+                  style="margin-right: 6px; color: #fcd34d"
+                ></i>
+                LUNCH BAG
+              </div>
+              <div class="floating-card card-5">
+                <i
+                  class="fas fa-chart-line"
+                  style="margin-right: 6px; color: #34d399"
+                ></i>
+                Lift 8.2x
+              </div>
+              <div class="floating-card card-6">
+                <i
+                  class="fas fa-fire"
+                  style="margin-right: 6px; color: #f87171"
+                ></i>
+                Confidence 78%
+              </div>
+              <div class="rule-flow">
+                <div class="flow-text">
+                  <span>Apriori</span>
+                  <i class="fas fa-arrow-right" style="margin: 0 4px"></i>
+                  <span>Rules</span>
+                  <i class="fas fa-arrow-right" style="margin: 0 4px"></i>
+                  <span>Rekomendasi</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== STATS ==================== -->
+    <section id="stats" class="py-5">
+      <div class="container">
+        <div class="row mb-4">
+          <div class="col">
+            <div class="section-tag" data-aos="fade-up">
+              <i class="fas fa-chart-line"></i> Overview
+            </div>
+            <h2 class="section-title" data-aos="fade-up" data-aos-delay="50">
+              Dataset & Model Summary
+            </h2>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="50">
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(79, 70, 229, 0.15); color: #818cf8"
+              >
+                <i class="fas fa-box-open"></i>
+              </div>
+              <div class="stat-value" id="statProducts">—</div>
+              <div class="stat-label">Total Produk</div>
+              <div class="stat-change" style="color: var(--accent2)">
+                <i class="fas fa-arrow-up" style="font-size: 10px"></i> Top 500
+                dianalisis
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(6, 182, 212, 0.15); color: #22d3ee"
+              >
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-value" id="statCustomers">—</div>
+              <div class="stat-label">Total Customer</div>
+              <div class="stat-change" style="color: var(--accent)">
+                <i class="fas fa-globe" style="font-size: 10px"></i>
+                <span id="statCountries">—</span> negara
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="150">
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(16, 185, 129, 0.15); color: #34d399"
+              >
+                <i class="fas fa-receipt"></i>
+              </div>
+              <div class="stat-value" id="statTransactions">—</div>
+              <div class="stat-label">Total Transaksi</div>
+              <div class="stat-change" style="color: #34d399">
+                <i class="fas fa-check" style="font-size: 10px"></i> Sudah
+                dibersihkan
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(245, 158, 11, 0.15); color: #fcd34d"
+              >
+                <i class="fas fa-project-diagram"></i>
+              </div>
+              <div class="stat-value" id="statRules">—</div>
+              <div class="stat-label">Association Rules</div>
+              <div class="stat-change" style="color: #fcd34d">
+                <i class="fas fa-fire" style="font-size: 10px"></i> Avg lift:
+                <span id="statAvgLift">—</span>x
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TOP PRODUCTS ==================== -->
+    <section id="topproducts" class="py-5">
+      <div class="container">
+        <div class="row mb-4">
+          <div class="col">
+            <div class="section-tag" data-aos="fade-up">
+              <i class="fas fa-trophy"></i> Top Produk
+            </div>
+            <h2 class="section-title" data-aos="fade-up" data-aos-delay="50">
+              Produk Terlaris
+            </h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+              Produk dengan jumlah transaksi terbanyak dalam dataset.
+            </p>
+          </div>
+        </div>
+        <div class="dark-card" data-aos="fade-up" data-aos-delay="150">
+          <div id="topProductsList">
+            <div class="text-center py-4" style="color: var(--text3)">
+              <div class="spinner"></div>
+              <div class="mt-2" style="font-size: 13px">Memuat data...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== REKOMENDASI ==================== -->
+    <section id="rekomendasi" class="py-5">
+      <div class="container">
+        <div class="row mb-4">
+          <div class="col-lg-8">
+            <div class="section-tag" data-aos="fade-up">
+              <i class="fas fa-magic"></i> Rekomendasi
+            </div>
+            <h2 class="section-title" data-aos="fade-up" data-aos-delay="50">
+              Cari Rekomendasi Produk
+            </h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+              Masukkan nama produk untuk mendapatkan rekomendasi berdasarkan
+              pola pembelian pelanggan.
+            </p>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="150">
+            <div class="dark-card h-100">
+              <label
+                style="
+                  font-size: 12px;
+                  color: var(--text3);
+                  font-weight: 600;
+                  letter-spacing: 0.5px;
+                  text-transform: uppercase;
+                  display: block;
+                  margin-bottom: 8px;
+                "
+              >
+                Nama Produk
+              </label>
+              <div style="position: relative">
+                <input
+                  type="text"
+                  class="search-input"
+                  id="productSearch"
+                  placeholder="Cari produk..."
+                  autocomplete="off"
+                />
+                <div class="search-dropdown" id="searchDropdown"></div>
+              </div>
+              <div class="mt-3" id="selectedProducts">
+                <div
+                  style="
+                    font-size: 12px;
+                    color: var(--text3);
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                  "
+                >
+                  Produk Dipilih
+                </div>
+                <div id="selectedList" style="min-height: 40px"></div>
+              </div>
+              <button
+                class="btn-primary-custom mt-3 w-100"
+                onclick="getRecommendations()"
+                id="recBtn"
+              >
+                <i class="fas fa-search"></i> Cari Rekomendasi
+              </button>
+              <button
+                class="btn-outline-custom mt-2 w-100"
+                onclick="clearSelection()"
+              >
+                <i class="fas fa-times"></i> Bersihkan
+              </button>
+            </div>
+          </div>
+          <div class="col-lg-8" data-aos="fade-up" data-aos-delay="200">
+            <div id="recResults">
+              <div
+                class="dark-card text-center py-5"
+                style="color: var(--text3)"
+              >
+                <i
+                  class="fas fa-search"
+                  style="
+                    font-size: 2rem;
+                    margin-bottom: 12px;
+                    color: var(--text3);
+                  "
+                ></i>
+                <div style="font-size: 14px">
+                  Pilih produk dan klik "Cari Rekomendasi"
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ASSOCIATION RULES ==================== -->
+    <section id="rules" class="py-5">
+      <div class="container">
+        <div class="row mb-4 align-items-end">
+          <div class="col-lg-8">
+            <div class="section-tag" data-aos="fade-up">
+              <i class="fas fa-code-branch"></i> Association Rules
+            </div>
+            <h2 class="section-title" data-aos="fade-up" data-aos-delay="50">
+              Tabel Association Rules
+            </h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+              Seluruh aturan asosiasi yang terbentuk dari algoritma Apriori.
+            </p>
+          </div>
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="150">
+            <input
+              type="text"
+              class="search-input"
+              id="ruleSearch"
+              placeholder="Cari rule..."
+              oninput="filterRules()"
+            />
+          </div>
+        </div>
+        <div
+          class="dark-card"
+          data-aos="fade-up"
+          data-aos-delay="200"
+          style="padding: 0; overflow: hidden"
+        >
+          <div style="overflow-x: auto">
+            <table class="dark-table" id="rulesTable">
+              <thead>
+                <tr>
+                  <th onclick="sortRules('antecedents')">
+                    Antecedent
+                    <i class="fas fa-sort" style="font-size: 10px"></i>
+                  </th>
+                  <th onclick="sortRules('consequents')">
+                    Consequent
+                    <i class="fas fa-sort" style="font-size: 10px"></i>
+                  </th>
+                  <th onclick="sortRules('support')">
+                    Support <i class="fas fa-sort" style="font-size: 10px"></i>
+                  </th>
+                  <th onclick="sortRules('confidence')">
+                    Confidence
+                    <i class="fas fa-sort" style="font-size: 10px"></i>
+                  </th>
+                  <th onclick="sortRules('lift')">
+                    Lift <i class="fas fa-sort" style="font-size: 10px"></i>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="rulesBody">
+                <tr>
+                  <td
+                    colspan="5"
+                    class="text-center py-4"
+                    style="color: var(--text3)"
+                  >
+                    <div class="spinner"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div
+            style="
+              padding: 16px;
+              border-top: 1px solid var(--border);
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div style="font-size: 12px; color: var(--text3)" id="rulesCount">
+              —
+            </div>
+            <div id="rulesPagination" style="display: flex; gap: 4px"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== MARKET BASKET ==================== -->
+    <section id="basket" class="py-5">
+      <div class="container">
+        <div class="row mb-4">
+          <div class="col">
+            <div class="section-tag" data-aos="fade-up">
+              <i class="fas fa-shopping-basket"></i> Market Basket
+            </div>
+            <h2 class="section-title" data-aos="fade-up" data-aos-delay="50">
+              Kombinasi Produk Populer
+            </h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+              Produk-produk yang paling sering dibeli bersamaan oleh pelanggan.
+            </p>
+          </div>
+        </div>
+        <div class="row g-3" id="comboGrid">
+          <div class="col-12 text-center py-4" style="color: var(--text3)">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== INSIGHTS ==================== -->
+    <section id="insights" class="py-5">
+      <div class="container">
+        <div class="row mb-4">
+          <div class="col">
+            <div class="section-tag" data-aos="fade-up">
+              <i class="fas fa-lightbulb"></i> Insights
+            </div>
+            <h2 class="section-title" data-aos="fade-up" data-aos-delay="50">
+              Insight Otomatis
+            </h2>
+          </div>
+        </div>
+        <div class="row g-3" id="insightsGrid">
+          <div class="col-12 text-center py-4" style="color: var(--text3)">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer>
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <div
+                style="
+                  width: 28px;
+                  height: 28px;
+                  background: linear-gradient(
+                    135deg,
+                    var(--primary),
+                    var(--secondary)
+                  );
+                  border-radius: 8px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 12px;
+                  color: white;
+                "
+              >
+                <i class="fas fa-project-diagram"></i>
+              </div>
+              <span style="font-weight: 600; font-size: 15px">AprioriRec</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text3); line-height: 1.6">
+              Sistem Rekomendasi Produk Marketplace<br />
+              Menggunakan Metode Apriori Algorithm
+            </div>
+          </div>
+          <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <div style="font-size: 12px; color: var(--text3)">
+              <span
+                style="
+                  background: rgba(79, 70, 229, 0.15);
+                  border: 1px solid var(--border);
+                  color: var(--primary-light);
+                  padding: 4px 12px;
+                  border-radius: 20px;
+                  font-weight: 600;
+                "
+                >Apriori Algorithm</span
+              >
+            </div>
+            <div style="font-size: 12px; color: var(--text3); margin-top: 8px">
+              &copy; 2025 — Sistem Rekomendasi Produk Marketplace
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script>
+      const API = "http://localhost:5000/api";
+
+      AOS.init({ once: true, offset: 60 });
+
+      let allRules = [];
+      let allProducts = [];
+      let selectedProducts = [];
+      let rulesPage = 1;
+      let rulesPerPage = 10;
+      let rulesSortKey = "lift";
+      let rulesSortDir = -1;
+      let filteredRules = [];
+
+      async function checkAPIStatus() {
+        try {
+          const r = await fetch(`${API}/health`);
+          const d = await r.json();
+          const el = document.getElementById("apiStatusText");
+          const dot = document.querySelector(".pulse-dot");
+          if (d.model_ready) {
+            el.textContent = "API Online";
+            dot.style.background = "#10B981";
+          } else {
+            el.textContent = "Model Loading...";
+            dot.style.background = "#F59E0B";
+            setTimeout(checkAPIStatus, 5000);
+          }
+        } catch {
+          document.getElementById("apiStatusText").textContent = "API Offline";
+          document.querySelector(".pulse-dot").style.background = "#EF4444";
+        }
+      }
+
+      function animateCounter(el, target, suffix = "") {
+        const duration = 1200;
+        const start = performance.now();
+        const from = 0;
+        const update = (time) => {
+          const progress = Math.min((time - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const val = Math.floor(from + (target - from) * eased);
+          el.textContent = val.toLocaleString("id") + suffix;
+          if (progress < 1) requestAnimationFrame(update);
+        };
+        requestAnimationFrame(update);
+      }
+
+      async function loadStats() {
+        try {
+          const r = await fetch(`${API}/analytics/summary`);
+          const d = await r.json();
+          const ds = d.dataset;
+          const md = d.model;
+          animateCounter(
+            document.getElementById("statProducts"),
+            ds.total_products,
+          );
+          animateCounter(
+            document.getElementById("statCustomers"),
+            ds.total_customers,
+          );
+          animateCounter(
+            document.getElementById("statTransactions"),
+            ds.total_transactions,
+          );
+          animateCounter(document.getElementById("statRules"), md.rules_count);
+          document.getElementById("statCountries").textContent =
+            ds.total_countries;
+          document.getElementById("statAvgLift").textContent = (
+            md.rules_stats?.avg_lift || 0
+          ).toFixed(1);
+        } catch {
+          [
+            "statProducts",
+            "statCustomers",
+            "statTransactions",
+            "statRules",
+          ].forEach((id) => {
+            document.getElementById(id).textContent = "—";
+          });
+        }
+      }
+
+      async function loadTopProducts() {
+        try {
+          const r = await fetch(`${API}/products/top?top_n=10`);
+          const d = await r.json();
+          const max = d.top_products[0]?.transaction_count || 1;
+          const html = d.top_products
+            .map(
+              (p) => `
+      <div style="padding:14px 0;border-bottom:1px solid rgba(79,70,229,0.08)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+            <div style="background:rgba(79,70,229,0.15);color:#818CF8;font-size:11px;font-weight:700;font-family:'Space Mono',monospace;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">#${p.rank}</div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0;margin-left:10px">
+            <span style="font-size:12px;color:var(--text2);font-family:'Space Mono',monospace">${p.transaction_count.toLocaleString("id")} transaksi</span>
+            <span style="font-size:12px;color:var(--text3)">£${p.avg_price.toFixed(2)}</span>
+          </div>
+        </div>
+        <div class="product-bar">
+          <div class="product-bar-fill" style="width:${((p.transaction_count / max) * 100).toFixed(1)}%"></div>
+        </div>
+      </div>
+    `,
+            )
+            .join("");
+          document.getElementById("topProductsList").innerHTML = html;
+        } catch {
+          document.getElementById("topProductsList").innerHTML =
+            '<div style="color:var(--text3);font-size:13px;padding:1rem">Gagal memuat data produk. Pastikan server Flask berjalan.</div>';
+        }
+      }
+
+      async function loadProductList() {
+        try {
+          const r = await fetch(`${API}/products/?per_page=200`);
+          const d = await r.json();
+          allProducts = d.products.map((p) => p.name);
+        } catch {}
+      }
+
+      const searchInput = document.getElementById("productSearch");
+      const dropdown = document.getElementById("searchDropdown");
+
+      searchInput.addEventListener("input", () => {
+        const q = searchInput.value.toUpperCase().trim();
+        if (q.length < 2) {
+          dropdown.classList.remove("show");
+          return;
+        }
+        const results = allProducts.filter((p) => p.includes(q)).slice(0, 8);
+        if (!results.length) {
+          dropdown.classList.remove("show");
+          return;
+        }
+        dropdown.innerHTML = results
+          .map(
+            (p) =>
+              `<div class="dropdown-item-custom" onclick="selectProduct('${p.replace(/'/g, "\\'")}')">
+      <i class="fas fa-tag" style="font-size:11px;color:var(--text3);margin-right:8px"></i>${p}
+    </div>`,
+          )
+          .join("");
+        dropdown.classList.add("show");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!searchInput.contains(e.target)) dropdown.classList.remove("show");
+      });
+
+      function selectProduct(name) {
+        if (selectedProducts.includes(name) || selectedProducts.length >= 3)
+          return;
+        selectedProducts.push(name);
+        renderSelectedProducts();
+        searchInput.value = "";
+        dropdown.classList.remove("show");
+      }
+
+      function removeProduct(name) {
+        selectedProducts = selectedProducts.filter((p) => p !== name);
+        renderSelectedProducts();
+      }
+
+      function clearSelection() {
+        selectedProducts = [];
+        renderSelectedProducts();
+        document.getElementById("recResults").innerHTML = `
+    <div class="dark-card text-center py-5" style="color:var(--text3)">
+      <i class="fas fa-search" style="font-size:2rem;margin-bottom:12px;color:var(--text3)"></i>
+      <div style="font-size:14px">Pilih produk dan klik "Cari Rekomendasi"</div>
+    </div>`;
+      }
+
+      function renderSelectedProducts() {
+        const list = document.getElementById("selectedList");
+        if (!selectedProducts.length) {
+          list.innerHTML =
+            '<div style="color:var(--text3);font-size:12px;font-style:italic">Belum ada produk dipilih</div>';
+          return;
+        }
+        list.innerHTML = selectedProducts
+          .map(
+            (p) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(79,70,229,0.1);border:1px solid rgba(79,70,229,0.2);border-radius:8px;padding:7px 10px;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p}</span>
+      <button onclick="removeProduct('${p.replace(/'/g, "\\'")}');" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;margin-left:8px;font-size:12px;flex-shrink:0">✕</button>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      async function getRecommendations() {
+        if (!selectedProducts.length) {
+          alert("Pilih minimal 1 produk terlebih dahulu.");
+          return;
+        }
+        const btn = document.getElementById("recBtn");
+        btn.innerHTML =
+          '<div class="spinner" style="width:16px;height:16px"></div> Mencari...';
+        btn.disabled = true;
+
+        try {
+          const r = await fetch(`${API}/recommend/products`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ products: selectedProducts, top_n: 9 }),
+          });
+          const d = await r.json();
+          renderRecommendations(d);
+        } catch {
+          document.getElementById("recResults").innerHTML =
+            '<div class="dark-card" style="color:#F87171;font-size:13px">Gagal memuat rekomendasi. Pastikan server Flask berjalan.</div>';
+        } finally {
+          btn.innerHTML = '<i class="fas fa-search"></i> Cari Rekomendasi';
+          btn.disabled = false;
+        }
+      }
+
+      function renderRecommendations(data) {
+        const container = document.getElementById("recResults");
+        if (!data.recommendations?.length) {
+          container.innerHTML = `
+      <div class="dark-card text-center py-5">
+        <i class="fas fa-exclamation-circle" style="font-size:2rem;color:#F59E0B;margin-bottom:12px"></i>
+        <div style="font-size:14px;color:var(--text2)">Tidak ada rekomendasi ditemukan untuk produk ini.</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:8px">Coba produk lain atau kombinasi berbeda.</div>
+      </div>`;
+          return;
+        }
+
+        const cards = data.recommendations
+          .map((r, i) => {
+            const confClass =
+              r.confidence >= 0.6
+                ? "badge-high"
+                : r.confidence >= 0.4
+                  ? "badge-mid"
+                  : "badge-low";
+            const liftClass =
+              r.lift >= 5
+                ? "badge-high"
+                : r.lift >= 2
+                  ? "badge-mid"
+                  : "badge-low";
+            return `
+      <div class="col-sm-6 col-xl-4">
+        <div class="rec-card fade-in-up" style="animation-delay:${i * 60}ms">
+          <div class="rec-rank">REKOMENDASI #${i + 1}</div>
+          <div class="rec-name">${r.product}</div>
+          <div class="rec-metrics">
+            <span class="rec-metric badge-low">S: ${(r.support * 100).toFixed(1)}%</span>
+            <span class="rec-metric ${confClass}">C: ${(r.confidence * 100).toFixed(1)}%</span>
+            <span class="rec-metric ${liftClass}">L: ${r.lift.toFixed(2)}x</span>
+          </div>
+          <div class="rec-reason">
+            <i class="fas fa-fire" style="color:#F59E0B;font-size:10px"></i>
+            ${r.reason || "Sering dibeli bersama"}
+          </div>
+        </div>
+      </div>`;
+          })
+          .join("");
+
+        container.innerHTML = `
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;color:var(--text2)">
+        <span style="color:var(--text);font-weight:600">${data.total}</span> rekomendasi untuk
+        <span style="color:var(--primary-light)">${data.query_products.join(", ")}</span>
+      </div>
+    </div>
+    <div class="row g-3">${cards}</div>`;
+      }
+
+      async function loadRules() {
+        try {
+          const r = await fetch(`${API}/recommend/rules?top_n=200`);
+          const d = await r.json();
+          allRules = d.rules.map((r) => ({
+            antecedents: r.antecedents_list.join(", "),
+            consequents: r.consequents_list.join(", "),
+            support: r.support,
+            confidence: r.confidence,
+            lift: r.lift,
+          }));
+          filteredRules = [...allRules];
+          renderRulesTable();
+        } catch {
+          document.getElementById("rulesBody").innerHTML =
+            '<tr><td colspan="5" style="color:#F87171;font-size:13px;padding:1rem">Gagal memuat rules.</td></tr>';
+        }
+      }
+
+      function filterRules() {
+        const q = document.getElementById("ruleSearch").value.toUpperCase();
+        filteredRules = allRules.filter(
+          (r) =>
+            r.antecedents.toUpperCase().includes(q) ||
+            r.consequents.toUpperCase().includes(q),
+        );
+        rulesPage = 1;
+        renderRulesTable();
+      }
+
+      function sortRules(key) {
+        if (rulesSortKey === key) rulesSortDir *= -1;
+        else {
+          rulesSortKey = key;
+          rulesSortDir = -1;
+        }
+        filteredRules.sort((a, b) => {
+          const va = typeof a[key] === "string" ? a[key] : a[key];
+          const vb = typeof b[key] === "string" ? b[key] : b[key];
+          return va < vb ? rulesSortDir : va > vb ? -rulesSortDir : 0;
+        });
+        renderRulesTable();
+      }
+
+      function renderRulesTable() {
+        const start = (rulesPage - 1) * rulesPerPage;
+        const page = filteredRules.slice(start, start + rulesPerPage);
+
+        document.getElementById("rulesCount").textContent =
+          `Menampilkan ${start + 1}–${Math.min(start + rulesPerPage, filteredRules.length)} dari ${filteredRules.length} rules`;
+
+        const tbody = document.getElementById("rulesBody");
+        tbody.innerHTML = page
+          .map((r) => {
+            const confClass =
+              r.confidence >= 0.6
+                ? "badge-high"
+                : r.confidence >= 0.4
+                  ? "badge-mid"
+                  : "badge-low";
+            const liftClass =
+              r.lift >= 5
+                ? "badge-high"
+                : r.lift >= 2
+                  ? "badge-mid"
+                  : "badge-low";
+            return `<tr>
+      <td style="font-size:12px;max-width:180px;white-space:normal">${r.antecedents}</td>
+      <td style="font-size:12px;max-width:180px;white-space:normal;color:var(--accent)">${r.consequents}</td>
+      <td><span class="badge-conf badge-low">${(r.support * 100).toFixed(2)}%</span></td>
+      <td><span class="badge-conf ${confClass}">${(r.confidence * 100).toFixed(1)}%</span></td>
+      <td><span class="badge-conf ${liftClass}">${r.lift.toFixed(2)}x</span></td>
+    </tr>`;
+          })
+          .join("");
+
+        const totalPages = Math.ceil(filteredRules.length / rulesPerPage);
+        let pagesHtml = "";
+        for (let i = 1; i <= Math.min(totalPages, 7); i++) {
+          pagesHtml += `<div class="page-btn ${i === rulesPage ? "active" : ""}" onclick="goToPage(${i})">${i}</div>`;
+        }
+        if (totalPages > 7)
+          pagesHtml += `<div class="page-btn" style="pointer-events:none">…</div>`;
+        document.getElementById("rulesPagination").innerHTML = pagesHtml;
+      }
+
+      function goToPage(p) {
+        rulesPage = p;
+        renderRulesTable();
+      }
+
+      async function loadCombos() {
+        try {
+          const r = await fetch(`${API}/recommend/combos?top_n=12`);
+          const d = await r.json();
+          const html = d.popular_combos
+            .map(
+              (c) => `
+      <div class="col-sm-6 col-lg-4" data-aos="fade-up">
+        <div class="combo-card">
+          <div style="margin-bottom:8px">
+            <i class="fas fa-shopping-cart" style="color:var(--accent);font-size:14px;margin-bottom:10px;display:block"></i>
+            ${c.items.map((item) => `<div class="combo-item">${item}</div>`).join('<div class="combo-plus">+</div>')}
+          </div>
+          <div class="combo-support">
+            <span style="font-size:12px;color:var(--text3)"><i class="fas fa-percentage" style="font-size:10px;margin-right:4px"></i> Support</span>
+            <span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--accent)">${c.frequency_pct}</span>
+          </div>
+        </div>
+      </div>`,
+            )
+            .join("");
+          document.getElementById("comboGrid").innerHTML = html;
+        } catch {
+          document.getElementById("comboGrid").innerHTML =
+            '<div style="color:var(--text3);font-size:13px;padding:1rem">Gagal memuat data.</div>';
+        }
+      }
+
+      async function loadInsights() {
+        try {
+          const [summaryR, topR, countryR] = await Promise.all([
+            fetch(`${API}/analytics/summary`),
+            fetch(`${API}/products/top?top_n=1`),
+            fetch(`${API}/analytics/sales-by-country?top_n=1`),
+          ]);
+          const summary = await summaryR.json();
+          const top = await topR.json();
+          const country = await countryR.json();
+
+          const insights = [
+            {
+              icon: "fas fa-crown",
+              color: "rgba(245,158,11,0.15)",
+              iconColor: "#FCD34D",
+              title: "Produk Terlaris",
+              value: top.top_products?.[0]?.name || "—",
+              desc: `${(top.top_products?.[0]?.transaction_count || 0).toLocaleString("id")} transaksi`,
+            },
+            {
+              icon: "fas fa-fire",
+              color: "rgba(239,68,68,0.15)",
+              iconColor: "#F87171",
+              title: "Lift Tertinggi",
+              value: `${(summary.model?.rules_stats?.max_lift || 0).toFixed(1)}x`,
+              desc: "Nilai lift maksimum dari semua rules",
+            },
+            {
+              icon: "fas fa-globe",
+              color: "rgba(6,182,212,0.15)",
+              iconColor: "#22D3EE",
+              title: "Negara Terbanyak",
+              value: country.sales_by_country?.[0]?.country || "—",
+              desc: `${(country.sales_by_country?.[0]?.transaction_count || 0).toLocaleString("id")} transaksi`,
+            },
+            {
+              icon: "fas fa-project-diagram",
+              color: "rgba(79,70,229,0.15)",
+              iconColor: "#818CF8",
+              title: "Total Rules Aktif",
+              value: (summary.model?.rules_count || 0).toLocaleString("id"),
+              desc: `Avg confidence: ${((summary.model?.rules_stats?.avg_confidence || 0) * 100).toFixed(1)}%`,
+            },
+            {
+              icon: "fas fa-layer-group",
+              color: "rgba(16,185,129,0.15)",
+              iconColor: "#34D399",
+              title: "Frequent Itemsets",
+              value: (
+                summary.model?.frequent_itemsets_count || 0
+              ).toLocaleString("id"),
+              desc: `Min support: ${((summary.model?.parameters?.min_support || 0) * 100).toFixed(0)}%`,
+            },
+            {
+              icon: "fas fa-users",
+              color: "rgba(124,58,237,0.15)",
+              iconColor: "#A78BFA",
+              title: "Total Customer",
+              value: (summary.dataset?.total_customers || 0).toLocaleString(
+                "id",
+              ),
+              desc: `Dari ${summary.dataset?.total_countries || 0} negara berbeda`,
+            },
+          ];
+
+          document.getElementById("insightsGrid").innerHTML = insights
+            .map(
+              (ins, i) => `
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="${i * 60}">
+        <div class="insight-card">
+          <div class="insight-icon" style="background:${ins.color};color:${ins.iconColor}">
+            <i class="${ins.icon}"></i>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px">${ins.title}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:2px;letter-spacing:-0.3px">${ins.value}</div>
+            <div style="font-size:12px;color:var(--text3)">${ins.desc}</div>
+          </div>
+        </div>
+      </div>`,
+            )
+            .join("");
+        } catch {
+          document.getElementById("insightsGrid").innerHTML =
+            '<div style="color:var(--text3);font-size:13px;padding:1rem">Gagal memuat insights.</div>';
+        }
+      }
+
+      async function init() {
+        renderSelectedProducts();
+        checkAPIStatus();
+        await Promise.all([
+          loadStats(),
+          loadTopProducts(),
+          loadProductList(),
+          loadRules(),
+          loadCombos(),
+          loadInsights(),
+        ]);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
